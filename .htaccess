@@ -1,4 +1,12 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    
+    # Jika file ada di folder public (seperti CSS, JS, Gambar), load dari sana
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
     RewriteRule ^(.*)$ public/$1 [L]
+
+    # Selain itu, jalankan index.php yang ada di root ini
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [L]
 </IfModule>
