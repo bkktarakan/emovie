@@ -33,23 +33,44 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
-      - name: Deploy via FTP
+      - name: Package application into a single archive
+        run: |
+          mkdir -p _deploy
+          zip -rq _deploy/deploy.zip . \
+            -x ".git/*" -x ".github/*" -x "node_modules/*" -x "tests/*" \
+            -x ".env" -x ".env.*" \
+            -x "storage/logs/*" \
+            -x "storage/framework/sessions/*" -x "storage/framework/views/*" \
+            -x "storage/framework/cache/*" -x "storage/framework/testing/*" \
+            -x "db_emovie_laravel.sql" \
+            -x "_deploy/*" -x "deploy-unzip.php.template"
+
+      - name: Prepare remote extractor script
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          perl -pe 's/__DEPLOY_TOKEN__/$ENV{DEPLOY_TOKEN}/g' deploy-unzip.php.template > _deploy/deploy-unzip.php
+
+      - name: Upload package via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            **/.env
-            **/.env.*
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/storage/framework/testing/**
+          local-dir: _deploy/
+
+      - name: Trigger remote extraction
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          code=$(curl -s -o /tmp/response.txt -w "%{http_code}" -X POST \
+            -H "X-Deploy-Token: ${DEPLOY_TOKEN}" \
+            "${SITE_URL%/}/deploy-unzip.php")
+          cat /tmp/response.txt
+          echo
+          if [ "$code" -ne 200 ]; then
+            echo "Extraction failed with HTTP $code"
+            exit 1
+          fi

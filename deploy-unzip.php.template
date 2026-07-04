@@ -1,0 +1,43 @@
+<?php
+
+$expectedToken = '__DEPLOY_TOKEN__';
+$providedToken = $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
+
+if (!hash_equals($expectedToken, $providedToken)) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
+$zipPath = __DIR__ . '/deploy.zip';
+
+if (!file_exists($zipPath)) {
+    http_response_code(404);
+    exit('Package not found');
+}
+
+$zip = new ZipArchive();
+
+if ($zip->open($zipPath) !== true) {
+    http_response_code(500);
+    exit('Failed to open archive');
+}
+
+$zip->extractTo(__DIR__);
+$zip->close();
+
+foreach ([
+    'storage/framework/cache/data',
+    'storage/framework/sessions',
+    'storage/framework/views',
+    'storage/framework/testing',
+    'storage/logs',
+] as $dir) {
+    $path = __DIR__ . '/' . $dir;
+    if (!is_dir($path)) {
+        mkdir($path, 0775, true);
+    }
+}
+
+unlink($zipPath);
+echo 'Deployed successfully';
+unlink(__FILE__);
