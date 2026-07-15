@@ -26,7 +26,9 @@ class RealisasiSheet implements FromCollection, WithHeadings, WithTitle, WithSty
     public function collection()
     {
         $rows = collect();
-        $outputs = Output::with('akumulatif')->where('tahun', $this->tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($q) {
+            $q->where('tahun', $this->tahun);
+        }])->where('tahun', $this->tahun)->orderBy('kode_output')->get();
         foreach ($outputs as $i => $o) {
             $akm = $o->akumulatif;
             $rows->push([

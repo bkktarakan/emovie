@@ -14,7 +14,9 @@ class LaporanController extends Controller
     public function index()
     {
         $tahun = session('tahun');
-        $outputs = Output::with('akumulatif')->where('tahun', $tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($query) use ($tahun) {
+            $query->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->orderBy('kode_output')->get();
         $capaian = Capaian::where('tahun', $tahun)->get();
         $totalAnggaran = $outputs->sum('anggaran');
         $totalRealisasi = $outputs->sum(fn($o) => $o->akumulatif?->anggaran_akumulatif ?? 0);
@@ -24,7 +26,11 @@ class LaporanController extends Controller
     public function cetak()
     {
         $tahun = session('tahun');
-        $outputs = Output::with(['akumulatif', 'realisasi'])->where('tahun', $tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($query) use ($tahun) {
+            $query->where('tahun', $tahun);
+        }, 'realisasi' => function($query) use ($tahun) {
+            $query->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->orderBy('kode_output')->get();
         $capaian = Capaian::with('realisasiBulanan')->where('tahun', $tahun)->get();
         $bulanList = \App\Models\Output::getBulanList();
         return view('laporan.cetak', compact('outputs', 'capaian', 'bulanList', 'tahun'));
@@ -39,7 +45,11 @@ class LaporanController extends Controller
     public function exportPdf()
     {
         $tahun = session('tahun');
-        $outputs = Output::with(['akumulatif', 'realisasi'])->where('tahun', $tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($query) use ($tahun) {
+            $query->where('tahun', $tahun);
+        }, 'realisasi' => function($query) use ($tahun) {
+            $query->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->orderBy('kode_output')->get();
         $capaian = Capaian::with('realisasiBulanan')->where('tahun', $tahun)->get();
         $bulanList = \App\Models\Output::getBulanList();
         $pdf = Pdf::loadView('laporan.cetak-pdf', compact('outputs', 'capaian', 'bulanList', 'tahun'))
