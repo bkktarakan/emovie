@@ -14,7 +14,9 @@ class RealisasiController extends Controller
     public function index()
     {
         $tahun = session('tahun');
-        $outputs = Output::with('akumulatif')->where('tahun', $tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($q) use ($tahun) {
+            $q->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->orderBy('kode_output')->get();
         return view('realisasi.index', compact('outputs', 'tahun'));
     }
 

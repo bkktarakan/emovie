@@ -16,7 +16,9 @@ class OutputController extends Controller
     public function index()
     {
         $tahun = session('tahun');
-        $outputs = Output::with('akumulatif')->where('tahun', $tahun)->orderBy('kode_output')->get();
+        $outputs = Output::with(['akumulatif' => function($q) use ($tahun) {
+            $q->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->orderBy('kode_output')->get();
         return view('output.index', compact('outputs', 'tahun'));
     }
 
