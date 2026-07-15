@@ -13,7 +13,9 @@ class CapaianController extends Controller
     public function index()
     {
         $tahun = session('tahun');
-        $capaian = Capaian::with('realisasiBulanan')->where('tahun', $tahun)->get();
+        $capaian = Capaian::with(['realisasiBulanan' => function($q) use ($tahun) {
+            $q->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->get();
         $bulanList = \App\Models\Output::getBulanList();
         return view('capaian.index', compact('capaian', 'tahun', 'bulanList'));
     }

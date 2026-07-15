@@ -31,7 +31,9 @@ class LaporanController extends Controller
         }, 'realisasi' => function($query) use ($tahun) {
             $query->where('tahun', $tahun);
         }])->where('tahun', $tahun)->orderBy('kode_output')->get();
-        $capaian = Capaian::with('realisasiBulanan')->where('tahun', $tahun)->get();
+        $capaian = Capaian::with(['realisasiBulanan' => function($q) use ($tahun) {
+            $q->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->get();
         $bulanList = \App\Models\Output::getBulanList();
         return view('laporan.cetak', compact('outputs', 'capaian', 'bulanList', 'tahun'));
     }
@@ -50,7 +52,9 @@ class LaporanController extends Controller
         }, 'realisasi' => function($query) use ($tahun) {
             $query->where('tahun', $tahun);
         }])->where('tahun', $tahun)->orderBy('kode_output')->get();
-        $capaian = Capaian::with('realisasiBulanan')->where('tahun', $tahun)->get();
+        $capaian = Capaian::with(['realisasiBulanan' => function($q) use ($tahun) {
+            $q->where('tahun', $tahun);
+        }])->where('tahun', $tahun)->get();
         $bulanList = \App\Models\Output::getBulanList();
         $pdf = Pdf::loadView('laporan.cetak-pdf', compact('outputs', 'capaian', 'bulanList', 'tahun'))
             ->setPaper('a4', 'landscape');
